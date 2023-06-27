@@ -1,11 +1,13 @@
 package com.exam.giorgibazierashvili.servicesImpl;
 
+import com.exam.giorgibazierashvili.dtos.ApiResponse;
 import com.exam.giorgibazierashvili.dtos.BookingDTO;
 import com.exam.giorgibazierashvili.entities.BookingEntity;
 import com.exam.giorgibazierashvili.repositories.BookingRepository;
 import com.exam.giorgibazierashvili.repositories.RoomsRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -17,27 +19,27 @@ public class BookingServices {
     @Autowired
     private RoomsRepository roomsRepository;
 
+    public ApiResponse<BookingDTO> getAll(){
+        return new ApiResponse(bookingRepository.findAll(),"returning all bookings",HttpStatus.OK.value());
+    }
 
-    public BookingDTO addBooking(BookingDTO bookingDTO) {
+
+    public ApiResponse<BookingDTO> addBooking(BookingDTO bookingDTO) {
         BookingEntity bookingEntity = new BookingEntity();
         bookingEntity.setRoom(roomsRepository.findById(bookingDTO.getRoomId()).orElse(null));
         bookingEntity.setStartDate(bookingDTO.getStartDate());
         bookingEntity.setEndDate(bookingDTO.getEndDate());
         bookingEntity.setUser(bookingDTO.getUser());
-        if (bookingEntity.getRoom() == null) {
-            throw new EmptyResultDataAccessException("ROOM NOT FOUND", 404);
-        } else {
-            if (isBooked(bookingDTO)) {
-                throw new EmptyResultDataAccessException("room is booked", 404);
-            } else {
-                bookingRepository.save(bookingEntity);
-                return new BookingDTO(
-                        bookingEntity.getRoom().getId(),
-                        bookingEntity.getStartDate(),
-                        bookingEntity.getEndDate(),
-                        bookingEntity.getUser());
-            }
-        }
+//        if (bookingEntity.getRoom() == null) {
+//            throw new EmptyResultDataAccessException("ROOM NOT FOUND", HttpStatus.NOT_FOUND.value());
+//        } else {
+//            if (isBooked(bookingDTO)) {
+//                throw new EmptyResultDataAccessException("room is booked", HttpStatus.NOT_FOUND.value());
+//            } else {
+                bookingRepository.saveAndFlush(bookingEntity);
+                return new ApiResponse(bookingEntity, "saved", HttpStatus.CREATED.value());
+//            }
+//        }
     }
 
     public BookingDTO getBooking(Long id) {
@@ -61,7 +63,7 @@ public class BookingServices {
                     break;
                 }
             }
-            return  booked;
+            return booked;
         }
     }
 
